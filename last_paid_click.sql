@@ -1,60 +1,134 @@
-select
-    s.visitor_id,
-    max(s.visit_date) as visit_date,
-    source as utm_source,
-    medium as utm_medium,
-    campaign as utm_campaign,
-    lead_id,
-    created_at,
-    amount,
-    closing_reason,
-    status_id
-from sessions as s
-left join leads as l
-    on s.visitor_id = l.visitor_id
-where medium != 'organic'
-group by
-    s.visitor_id,
-    source,
-    medium,
-    campaign,
-    lead_id,
-    amount,
-    created_at,
-    closing_reason,
-    status_id
-order by amount desc nulls last, visit_date, utm_source, utm_medium, utm_campaign
-limit 10
+WITH LASTPAIDCLICK AS (
+    SELECT
+        S.VISITOR_ID,
+        S.VISIT_DATE,
+        L.CREATED_AT,
+        L.LEAD_ID,
+        L.STATUS_ID,
+        L.AMOUNT,
+        S.SOURCE AS UTM_SOURCE,
+        S.MEDIUM AS UTM_MEDIUM,
+        S.CAMPAIGN AS UTM_CAMPAIGN,
+        to_char(S.VISIT_DATE, 'YYYY-MM-DD') AS VISIT_DATES,
+        row_number()
+            OVER (PARTITION BY S.VISITOR_ID ORDER BY S.VISIT_DATE DESC)
+            AS RW
+    FROM SESSIONS AS S
+    FULL JOIN LEADS AS L ON S.VISITOR_ID = L.VISITOR_ID
+    WHERE S.MEDIUM != 'organic'
+)
 
-with sub2 as (select campaign_date as data,
-	utm_source,
-	utm_medium,
-	utm_campaign,
-	daily_spent
-from vk_ads va
-union all
-select campaign_date as data,
-	utm_source,
-	utm_medium,
-	utm_campaign,
-	daily_spent
-from ya_ads ya)
-select date_trunc('day', visit_date) as visit_dates,
-	count(s.visitor_id) as visitors_count,
-	s.source utm_source,
-	s.medium utm_medium,
-	s.campaign utm_campaign,
-	sum(daily_spent) as total_cost,
-	count(lead_id) leads_count,
-	count(lead_id) filter (where status_id = 142) as purchases_count,
-	sum(amount) as revenue
-from sessions s
-left join leads l
-	on l.visitor_id = s.visitor_id
-left join sub2 
-	on sub2.utm_source = s.source 
-	and sub2.utm_medium = s.medium
-	and sub2.utm_campaign = s.campaign
-where s.medium != 'organic' and s.source in ('yandex', 'vk')
-group by visit_dates, s.source, s.medium, s.campaign
-order by revenue desc nulls last, visit_dates, visitors_count desc, utm_source, utm_medium, utm_campaign
+SELECT
+    SUB.VISITOR_ID,
+    SUB.VISIT_DATE,
+    SUB.UTM_SOURCE,
+    SUB.UTM_MEDIUM,
+    SUB.UTM_CAMPAIGN,
+    SUB.LEAD_ID,
+    SUB.CREATED_AT,
+    SUB.AMOUNT,
+    CLOSING_REASON,
+    SUB.STATUS_ID
+FROM SESSIONS AS S
+LEFT JOIN LEADS AS L
+    ON S.VISITOR_ID = L.VISITOR_ID
+LEFT JOIN LASTPAIDCLICK AS SUB
+    ON S.VISITOR_ID = SUB.VISITOR_ID
+WHERE S.MEDIUM != 'organic' AND RW = 1
+GROUP BY
+    SUB.VISITOR_ID,
+    SUB.VISIT_DATE,
+    SUB.UTM_SOURCE,
+    SUB.UTM_MEDIUM,
+    SUB.UTM_CAMPAIGN,
+    SUB.LEAD_ID,
+    SUB.AMOUNT,
+    SUB.CREATED_AT,
+    CLOSING_REASON,
+    SUB.STATUS_ID
+ORDER BY
+    AMOUNT DESC NULLS LAST,
+    SUB.VISIT_DATE ASC,
+    UTM_SOURCE ASC,
+    UTM_MEDIUM ASC,
+    UTM_CAMPAIGN ASC
+LIMIT 10
+
+
+WITH LASTPAIDCLICK AS (
+    SELECT
+        S.VISITOR_ID,
+        S.VISIT_DATE,
+        L.CREATED_AT,
+        L.LEAD_ID,
+        L.STATUS_ID,
+        L.AMOUNT,
+        S.SOURCE AS UTM_SOURCE,
+        S.MEDIUM AS UTM_MEDIUM,
+        S.CAMPAIGN AS UTM_CAMPAIGN,
+        to_char(S.VISIT_DATE, 'YYYY-MM-DD') AS VISIT_DATES,
+        to_char(L.CREATED_AT, 'YYYY-MM-DD') AS CREATED,
+        row_number()
+            OVER (PARTITION BY S.VISITOR_ID ORDER BY S.VISIT_DATE DESC)
+            AS RN
+    FROM SESSIONS AS S
+    FULL JOIN LEADS AS L ON S.VISITOR_ID = L.VISITOR_ID
+    WHERE S.MEDIUM != 'organic'
+),
+
+ADS AS (
+    -- Первый запрос как подзапрос: объединение затрат из ya_ads и vk_ads
+    SELECT
+        to_char(CAMPAIGN_DATE, 'YYYY-MM-DD') AS DATE,
+        UTM_SOURCE,
+        UTM_MEDIUM,
+        UTM_CAMPAIGN,
+        sum(DAILY_SPENT) AS TOTAL
+    FROM YA_ADS
+    GROUP BY CAMPAIGN_DATE, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN
+    UNION
+    SELECT
+        to_char(CAMPAIGN_DATE, 'YYYY-MM-DD') AS DATE,
+        UTM_SOURCE,
+        UTM_MEDIUM,
+        UTM_CAMPAIGN,
+        sum(DAILY_SPENT) AS TOTAL
+    FROM VK_ADS
+    GROUP BY CAMPAIGN_DATE, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN
+)
+
+SELECT
+    LPC.VISIT_DATES AS VISIT_DATE,
+    LPC.UTM_SOURCE,
+    LPC.UTM_MEDIUM,
+    LPC.UTM_CAMPAIGN,
+    count(DISTINCT LPC.VISITOR_ID) AS VISITORS_COUNT,
+    coalesce(ADS.TOTAL, 0) AS TOTAL_COST,
+    count(LPC.LEAD_ID) FILTER (WHERE LPC.CREATED_AT > LPC.VISIT_DATE)
+        AS LEADS_COUNT,
+    count(LPC.LEAD_ID) FILTER (
+        WHERE LPC.STATUS_ID = 142 AND LPC.CREATED_AT > LPC.VISIT_DATE
+    ) AS PURCHASES_COUNT,
+    coalesce(sum(LPC.AMOUNT), 0) AS REVENUE
+FROM LASTPAIDCLICK AS LPC
+LEFT JOIN ADS
+    ON
+        LPC.VISIT_DATES = ADS.DATE
+        AND LPC.UTM_SOURCE = ADS.UTM_SOURCE
+        AND LPC.UTM_MEDIUM = ADS.UTM_MEDIUM
+        AND LPC.UTM_CAMPAIGN = ADS.UTM_CAMPAIGN
+WHERE LPC.RN = 1
+GROUP BY
+    LPC.VISIT_DATES,
+    LPC.UTM_SOURCE,
+    LPC.UTM_MEDIUM,
+    LPC.UTM_CAMPAIGN,
+    ADS.TOTAL
+ORDER BY
+    REVENUE DESC NULLS LAST,
+    VISIT_DATE ASC,
+    VISITORS_COUNT DESC,
+    UTM_SOURCE ASC, UTM_MEDIUM ASC, UTM_CAMPAIGN ASC
+LIMIT 15
+
+	
