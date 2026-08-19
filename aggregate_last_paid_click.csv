@@ -1,16 +1,16 @@
-"visit_dates","visitors_count","utm_source","utm_medium","utm_campaign","total_cost","leads_count","purchases_count","revenue"
-2023-06-01 00:00:00.000,321943,yandex,cpc,prof-frontend,177251592,321943,49785,4747298460
-2023-06-01 00:00:00.000,190145,yandex,cpc,prof-python,106556680,190145,26844,2135742195
-2023-06-01 00:00:00.000,120120,yandex,cpc,freemium,66231528,120120,23660,1571312470
-2023-06-01 00:00:00.000,115968,yandex,cpc,prof-java,63434944,115968,9060,645048444
-2023-06-01 00:00:00.000,11470,yandex,cpc,base-python,6418205,11470,2480,169857680
-2023-06-01 00:00:00.000,18684,yandex,cpc,base-frontend,10328850,18684,1384,111465630
-2023-06-01 00:00:00.000,24050,vk,cpc,freemium-frontend,10239190,15540,1665,102153485
-2023-06-01 00:00:00.000,16929,vk,cpc,prof-python,14389452,11457,1197,100548684
-2023-06-01 00:00:00.000,6137,yandex,cpc,prof-data-analytics,3425619,6137,722,79515304
-2023-06-01 00:00:00.000,18095,vk,cpc,prof-data-analytics,8228528,13395,1175,59559340
-2023-06-01 00:00:00.000,13137,vk,cpc,prof-java,11549859,8154,453,57971618
-2023-06-01 00:00:00.000,8164,yandex,cpc,base-java,4691362,8164,628,52752000
-2023-06-01 00:00:00.000,5575,yandex,cpc,prof-professions-brand,3084375,5575,892,51358461
-2023-06-01 00:00:00.000,11792,vk,cpc,freemium-python,4335302,7920,528,43856736
-2023-06-01 00:00:00.000,830,yandex,cpc,dod-frontend,486150,830,249,16851905
+"visit_date","visitors_count","utm_source","utm_medium","utm_campaign","total_cost","leads_count","purchases_count","revenue"
+"2023-06-01",103,yandex,cpc,freemium,21654,100,25,1654810
+"2023-06-01",78,yandex,cpc,prof-frontend,57138,73,12,1057000
+"2023-06-01",62,yandex,cpc,prof-python,33026,61,7,613196
+"2023-06-01",31,yandex,cpc,base-python,12524,28,7,476021
+"2023-06-01",71,vk,cpc,prof-python,2028,40,5,355564
+"2023-06-01",80,vk,cpc,freemium-frontend,3160,43,5,338083
+"2023-06-01",49,yandex,cpc,prof-java,29490,49,4,284590
+"2023-06-01",40,yandex,cpc,base-frontend,18061,39,3,268515
+"2023-06-01",51,vk,cpc,prof-java,3115,23,2,232726
+"2023-06-01",14,yandex,cpc,prof-data-analytics,10086,14,2,220264
+"2023-06-30",71,admitad,cpa,admitad,0,0,0,201150
+"2023-06-01",13,yandex,cpc,prof-professions-brand,4818,13,3,154287
+"2023-06-20",3,telegram,cpp,base-java,0,1,1,151192
+"2023-06-01",4,yandex,cpc,dod-php,5964,4,1,150255
+"2023-06-01",4,yandex,cpc,base-professions-retarget,151,4,1,134100
