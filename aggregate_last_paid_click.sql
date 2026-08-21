@@ -10,27 +10,6 @@ WITH LASTPAIDCLICK AS (
         S.MEDIUM AS UTM_MEDIUM,
         S.CAMPAIGN AS UTM_CAMPAIGN,
         to_char(S.VISIT_DATE, 'YYYY-MM-DD') AS VISIT_DATES,
-        row_number()
-            OVER (PARTITION BY S.VISITOR_ID ORDER BY S.VISIT_DATE DESC)
-            AS RW
-    FROM SESSIONS AS S
-    FULL JOIN LEADS AS L ON S.VISITOR_ID = L.VISITOR_ID
-    WHERE S.MEDIUM != 'organic'
-)
-select
-    sub.visitor_id,
-WITH LASTPAIDCLICK AS (
-    SELECT
-        S.VISITOR_ID,
-        S.VISIT_DATE,
-        L.CREATED_AT,
-        L.LEAD_ID,
-        L.STATUS_ID,
-        L.AMOUNT,
-        S.SOURCE AS UTM_SOURCE,
-        S.MEDIUM AS UTM_MEDIUM,
-        S.CAMPAIGN AS UTM_CAMPAIGN,
-        to_char(S.VISIT_DATE, 'YYYY-MM-DD') AS VISIT_DATES,
         to_char(L.CREATED_AT, 'YYYY-MM-DD') AS CREATED,
         row_number()
             OVER (PARTITION BY S.VISITOR_ID ORDER BY S.VISIT_DATE DESC)
